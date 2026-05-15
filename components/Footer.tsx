@@ -4,13 +4,15 @@ import { Sparkles, Mail, Phone, MapPin, Twitter, Instagram, Facebook, Linkedin }
 const footerLinks = {
   services: [
     { label: 'Browse Services', href: '/categories' },
+    { label: 'Our Vendors', href: '/vendors' },
+    { label: 'Pricing Plans', href: '/services' },
+    { label: 'Event Gallery', href: '/gallery' },
     { label: 'Wedding Events', href: '/categories' },
     { label: 'Corporate Events', href: '/categories' },
-    { label: 'Birthday Parties', href: '/categories' },
-    { label: 'Conferences', href: '/categories' },
   ],
   company: [
     { label: 'About Us', href: '/about' },
+    { label: 'Blog', href: '/blog' },
     { label: 'How It Works', href: '/#how-it-works' },
     { label: 'FAQ', href: '/faq' },
     { label: 'Contact Us', href: '/contact' },

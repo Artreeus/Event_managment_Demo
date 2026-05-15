@@ -26,8 +26,11 @@ import {
 
 const navLinks = [
   { href: '/categories', label: 'Browse Services' },
+  { href: '/vendors', label: 'Vendors' },
+  { href: '/gallery', label: 'Gallery' },
+  { href: '/blog', label: 'Blog' },
+  { href: '/services', label: 'Pricing' },
   { href: '/about', label: 'About' },
-  { href: '/faq', label: 'FAQ' },
   { href: '/contact', label: 'Contact' },
 ];
 
