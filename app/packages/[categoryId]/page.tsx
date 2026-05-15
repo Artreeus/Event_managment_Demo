@@ -3,10 +3,9 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader, Check } from 'lucide-react';
+import { Loader, Check, ArrowLeft, Clock, Star, Package } from 'lucide-react';
 import Header from '@/components/Header';
 
 interface Package {
@@ -17,6 +16,7 @@ interface Package {
   duration: string;
   features: string[];
   image: string;
+  popular?: boolean;
 }
 
 export default function PackagesPage() {
@@ -30,16 +30,17 @@ export default function PackagesPage() {
   useEffect(() => {
     const fetchPackages = async () => {
       try {
-        const response = await fetch(`/api/packages?categoryId=${categoryId}`);
-        if (!response.ok) throw new Error('Failed to fetch');
-        const data = await response.json();
-        setPackages(data);
+        const [pkgRes, catRes] = await Promise.all([
+          fetch(`/api/packages?categoryId=${categoryId}`),
+          fetch('/api/categories'),
+        ]);
+        if (!pkgRes.ok) throw new Error('Failed to fetch');
+        const pkgData = await pkgRes.json();
+        setPackages(pkgData);
 
-        // Fetch category name
-        const catResponse = await fetch(`/api/categories`);
-        if (catResponse.ok) {
-          const categories = await catResponse.json();
-          const cat = categories.find((c: any) => c._id === categoryId);
+        if (catRes.ok) {
+          const cats = await catRes.json();
+          const cat = cats.find((c: any) => c._id === categoryId);
           if (cat) setCategoryName(cat.name);
         }
       } catch (err) {
@@ -49,94 +50,173 @@ export default function PackagesPage() {
         setIsLoading(false);
       }
     };
-
     fetchPackages();
   }, [categoryId]);
 
   return (
-    <main>
+    <div>
       <Header />
-      <div className="min-h-screen bg-slate-50 py-12">
-        <div className="container mx-auto px-4">
-          <div className="mb-12">
-            <Link href="/categories" className="text-blue-600 hover:underline mb-4 inline-block">
-              ← Back to Categories
-            </Link>
-            <h1 className="text-4xl font-bold text-slate-900 mb-4">
-              {categoryName} Packages
-            </h1>
-            <p className="text-lg text-slate-600">
-              Select a package that fits your needs
-            </p>
-          </div>
 
+      {/* Page Header */}
+      <section className="bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 text-white py-16">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center gap-2 text-blue-300 text-sm mb-4">
+            <Link href="/" className="hover:text-white transition-colors">Home</Link>
+            <span>/</span>
+            <Link href="/categories" className="hover:text-white transition-colors">Services</Link>
+            <span>/</span>
+            <span>{categoryName || 'Packages'}</span>
+          </div>
+          <Link
+            href="/categories"
+            className="inline-flex items-center gap-2 text-blue-300 hover:text-white transition-colors text-sm mb-5"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Categories
+          </Link>
+          <h1 className="text-4xl md:text-5xl font-bold mb-3">
+            {categoryName ? `${categoryName} Packages` : 'Packages'}
+          </h1>
+          <p className="text-slate-300 text-lg">
+            Choose the package that fits your needs and budget
+          </p>
+        </div>
+      </section>
+
+      {/* Packages Grid */}
+      <section className="py-14 bg-slate-50 min-h-[50vh]">
+        <div className="container mx-auto px-4">
           {isLoading ? (
-            <div className="flex justify-center py-12">
+            <div className="flex flex-col items-center justify-center py-24 gap-3">
               <Loader className="w-8 h-8 animate-spin text-blue-600" />
+              <p className="text-slate-500 text-sm">Loading packages...</p>
             </div>
           ) : error ? (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-600">
-              {error}
+            <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-red-600 text-center">
+              <p className="font-medium">{error}</p>
             </div>
           ) : packages.length === 0 ? (
-            <div className="bg-slate-100 rounded-lg p-8 text-center">
-              <p className="text-slate-600">No packages available for this category.</p>
+            <div className="flex flex-col items-center justify-center py-24 gap-4">
+              <div className="w-16 h-16 bg-slate-200 rounded-2xl flex items-center justify-center">
+                <Package className="w-8 h-8 text-slate-400" />
+              </div>
+              <div className="text-center">
+                <p className="text-slate-700 font-medium">No packages available yet</p>
+                <p className="text-slate-400 text-sm mt-1">Check back soon for new packages</p>
+              </div>
+              <Link href="/categories">
+                <Button variant="outline" size="sm">Back to Categories</Button>
+              </Link>
             </div>
           ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {packages.map((pkg) => (
-                <Card key={pkg._id} className="border-slate-200 flex flex-col">
-                  {pkg.image && (
-                    <div className="h-48 bg-slate-200 rounded-t-lg overflow-hidden">
-                      <img
-                        src={pkg.image}
-                        alt={pkg.name}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  )}
-                  <CardHeader>
-                    <CardTitle className="text-slate-900">{pkg.name}</CardTitle>
-                    {pkg.description && (
-                      <CardDescription>{pkg.description}</CardDescription>
-                    )}
-                  </CardHeader>
-                  <CardContent className="flex-1 flex flex-col">
-                    <div className="mb-6">
-                      <div className="text-3xl font-bold text-slate-900 mb-2">
-                        ${pkg.price}
-                      </div>
-                      {pkg.duration && (
-                        <Badge variant="secondary" className="text-slate-600">
-                          {pkg.duration}
-                        </Badge>
+            <>
+              <p className="text-sm text-slate-500 mb-6">
+                {packages.length} {packages.length === 1 ? 'package' : 'packages'} available
+              </p>
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {packages.map((pkg, idx) => {
+                  const isPopular = idx === 1 && packages.length >= 2;
+                  return (
+                    <div
+                      key={pkg._id}
+                      className={`relative bg-white rounded-2xl border overflow-hidden flex flex-col transition-all duration-300 hover:shadow-xl ${
+                        isPopular
+                          ? 'border-blue-500 shadow-lg shadow-blue-100'
+                          : 'border-slate-200 hover:shadow-slate-200/80'
+                      }`}
+                    >
+                      {/* Popular badge */}
+                      {isPopular && (
+                        <div className="absolute top-4 right-4 z-10">
+                          <span className="inline-flex items-center gap-1 bg-blue-600 text-white text-xs font-semibold px-3 py-1 rounded-full shadow-sm">
+                            <Star className="w-3 h-3 fill-white" />
+                            Most Popular
+                          </span>
+                        </div>
                       )}
-                    </div>
 
-                    {pkg.features && pkg.features.length > 0 && (
-                      <div className="mb-6 flex-1">
-                        <h4 className="font-semibold text-slate-900 mb-3">Includes:</h4>
-                        <ul className="space-y-2">
-                          {pkg.features.map((feature, idx) => (
-                            <li key={idx} className="flex items-start gap-2 text-sm text-slate-600">
-                              <Check className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
-                              <span>{feature}</span>
-                            </li>
-                          ))}
-                        </ul>
+                      {/* Image */}
+                      <div className="relative h-48 bg-gradient-to-br from-slate-200 to-slate-300 overflow-hidden flex-shrink-0">
+                        {pkg.image ? (
+                          <img
+                            src={pkg.image}
+                            alt={pkg.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <Package className="w-12 h-12 text-slate-400" />
+                          </div>
+                        )}
+                        {isPopular && (
+                          <div className="absolute inset-0 bg-blue-600/10" />
+                        )}
                       </div>
-                    )}
 
-                    <Link href={`/book/${pkg._id}`} className="w-full">
-                      <Button className="w-full">Book Now</Button>
-                    </Link>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                      {/* Content */}
+                      <div className="p-6 flex flex-col flex-1">
+                        <div className="mb-5">
+                          <h3 className="text-lg font-semibold text-slate-900 mb-1.5">{pkg.name}</h3>
+                          {pkg.description && (
+                            <p className="text-slate-500 text-sm leading-relaxed line-clamp-2">
+                              {pkg.description}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Price */}
+                        <div className="flex items-end gap-2 mb-4">
+                          <span className="text-4xl font-bold text-slate-900">${pkg.price}</span>
+                          {pkg.duration && (
+                            <div className="flex items-center gap-1 text-slate-500 text-sm mb-1">
+                              <Clock className="w-3.5 h-3.5" />
+                              {pkg.duration}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Divider */}
+                        <div className="border-t border-slate-100 mb-4" />
+
+                        {/* Features */}
+                        {pkg.features && pkg.features.length > 0 && (
+                          <div className="mb-6 flex-1">
+                            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
+                              What&apos;s included
+                            </p>
+                            <ul className="space-y-2.5">
+                              {pkg.features.map((feature, fIdx) => (
+                                <li key={fIdx} className="flex items-start gap-2.5 text-sm text-slate-600">
+                                  <div className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                    <Check className="w-3 h-3 text-green-600" />
+                                  </div>
+                                  {feature}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        <Link href={`/book/${pkg._id}`} className="mt-auto">
+                          <Button
+                            className={`w-full ${
+                              isPopular
+                                ? 'bg-blue-600 hover:bg-blue-700 shadow-sm shadow-blue-200'
+                                : 'bg-slate-900 hover:bg-slate-800'
+                            }`}
+                          >
+                            Book Now
+                          </Button>
+                        </Link>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
           )}
         </div>
-      </div>
-    </main>
+      </section>
+    </div>
   );
 }
