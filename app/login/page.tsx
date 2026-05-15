@@ -6,14 +6,13 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertCircle, Loader } from 'lucide-react';
-import Header from '@/components/Header';
+import { AlertCircle, Loader, Sparkles, Eye, EyeOff } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -42,70 +41,121 @@ export default function LoginPage() {
   };
 
   return (
-    <main>
-      <Header />
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4 py-12">
-        <Card className="w-full max-w-md border-slate-200">
-          <CardHeader>
-            <CardTitle className="text-slate-900">Sign In</CardTitle>
-            <CardDescription>
-              Enter your credentials to access your account
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {error && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex gap-2">
-                  <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-                  <p className="text-sm text-red-600">{error}</p>
-                </div>
-              )}
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 flex items-center justify-center px-4 py-12">
+      {/* Background decoration */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl" />
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl" />
+      </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-900">Email</label>
-                <Input
-                  type="email"
-                  placeholder="you@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  disabled={isLoading}
-                  className="border-slate-200"
-                  required
-                />
+      <div className="relative w-full max-w-md">
+        {/* Logo */}
+        <div className="text-center mb-8">
+          <Link href="/" className="inline-flex items-center gap-2 group">
+            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center group-hover:bg-blue-500 transition-colors shadow-lg shadow-blue-500/30">
+              <Sparkles className="w-5 h-5 text-white" />
+            </div>
+            <span className="font-bold text-2xl text-white tracking-tight">
+              Event<span className="text-blue-400">Book</span>
+            </span>
+          </Link>
+        </div>
+
+        {/* Card */}
+        <div className="bg-white rounded-2xl shadow-2xl shadow-black/20 p-8">
+          <div className="mb-7">
+            <h1 className="text-2xl font-bold text-slate-900 mb-1">Welcome back</h1>
+            <p className="text-slate-500 text-sm">Sign in to your EventBook account</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-xl p-3.5 flex items-start gap-2.5">
+                <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-red-600">{error}</p>
               </div>
+            )}
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-900">Password</label>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-slate-700">Email address</label>
+              <Input
+                type="email"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={isLoading}
+                className="border-slate-200 rounded-xl h-11 focus-visible:ring-blue-500"
+                required
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium text-slate-700">Password</label>
+                <button
+                  type="button"
+                  className="text-xs text-blue-600 hover:text-blue-700 transition-colors"
+                >
+                  Forgot password?
+                </button>
+              </div>
+              <div className="relative">
                 <Input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={isLoading}
-                  className="border-slate-200"
+                  className="border-slate-200 rounded-xl h-11 pr-10 focus-visible:ring-blue-500"
                   required
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
               </div>
+            </div>
 
-              <Button
-                type="submit"
-                disabled={isLoading}
-                className="w-full"
-              >
-                {isLoading && <Loader className="w-4 h-4 mr-2 animate-spin" />}
-                {isLoading ? 'Signing In...' : 'Sign In'}
-              </Button>
-            </form>
+            <Button
+              type="submit"
+              disabled={isLoading}
+              className="w-full h-11 bg-blue-600 hover:bg-blue-700 rounded-xl text-base font-medium shadow-sm"
+            >
+              {isLoading ? (
+                <>
+                  <Loader className="w-4 h-4 mr-2 animate-spin" />
+                  Signing In...
+                </>
+              ) : (
+                'Sign In'
+              )}
+            </Button>
+          </form>
 
-            <p className="text-center text-slate-600 text-sm mt-6">
+          <div className="mt-6 pt-6 border-t border-slate-100 text-center">
+            <p className="text-slate-500 text-sm">
               Don&apos;t have an account?{' '}
-              <Link href="/register" className="text-blue-600 hover:underline">
-                Sign up
+              <Link href="/register" className="text-blue-600 font-medium hover:text-blue-700 transition-colors">
+                Create one free
               </Link>
             </p>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
+
+        <p className="text-center text-slate-500 text-xs mt-6">
+          By signing in, you agree to our{' '}
+          <Link href="#" className="text-slate-400 underline hover:text-slate-300">
+            Terms of Service
+          </Link>{' '}
+          and{' '}
+          <Link href="#" className="text-slate-400 underline hover:text-slate-300">
+            Privacy Policy
+          </Link>
+        </p>
       </div>
-    </main>
+    </div>
   );
 }
