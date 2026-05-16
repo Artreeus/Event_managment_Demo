@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import Header from '@/components/Header';
+import NewsletterForm from '@/components/NewsletterForm';
 import {
   Sparkles,
   Calendar,
@@ -240,16 +241,7 @@ export default function HomePage() {
             <p className="text-slate-500 dark:text-gray-400 mb-8">
               Join 5,000+ event planners getting weekly inspiration, vendor spotlights, and special offers.
             </p>
-            <form className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto" onSubmit={(e) => e.preventDefault()}>
-              <input
-                type="email"
-                placeholder="Enter your email address"
-                className="flex-1 px-4 py-3 rounded-xl border border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-slate-400 dark:placeholder:text-gray-500"
-              />
-              <Button className="bg-blue-600 hover:bg-blue-700 text-white px-6 shrink-0">
-                Subscribe <ArrowRight className="w-4 h-4 ml-1.5" />
-              </Button>
-            </form>
+            <NewsletterForm />
             <p className="text-xs text-slate-400 dark:text-gray-500 mt-3">No spam, ever. Unsubscribe at any time.</p>
           </div>
         </div>
