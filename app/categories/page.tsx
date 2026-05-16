@@ -102,7 +102,12 @@ export default function CategoriesPage() {
                     <div className="bg-white dark:bg-gray-800 rounded-2xl border border-slate-200 dark:border-gray-700 overflow-hidden hover:shadow-xl hover:shadow-slate-200/80 dark:hover:shadow-black/30 hover:-translate-y-1 transition-all duration-300 h-full flex flex-col">
                       <div className="relative h-52 bg-gradient-to-br from-slate-200 to-slate-300 dark:from-gray-700 dark:to-gray-600 overflow-hidden flex-shrink-0">
                         {category.image ? (
-                          <img src={category.image} alt={category.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                          <img
+                            src={category.image}
+                            alt={category.name}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                          />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
                             <Grid3X3 className="w-12 h-12 text-slate-400 dark:text-gray-500" />
