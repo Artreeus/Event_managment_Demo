@@ -8,7 +8,7 @@ import {
 
 export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
   return (
-    <NextThemesProvider scriptProps={{ suppressHydrationWarning: true }} {...props}>
+    <NextThemesProvider scriptProps={{ type: 'application/json' }} {...props}>
       {children}
     </NextThemesProvider>
   )
