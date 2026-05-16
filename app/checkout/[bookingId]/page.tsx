@@ -92,13 +92,26 @@ export default function CheckoutPage() {
     );
   }
 
-  if (!booking) {
+  if (error || !booking) {
     return (
       <div className="bg-white dark:bg-gray-900 min-h-screen">
         <Header />
-        <div className="min-h-[60vh] flex items-center justify-center flex-col gap-4">
-          <p className="text-slate-600 dark:text-gray-400">Booking not found</p>
-          <Link href="/dashboard"><Button>Back to Dashboard</Button></Link>
+        <div className="min-h-[60vh] flex items-center justify-center px-4">
+          <div className="text-center max-w-md">
+            <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <AlertCircle className="w-8 h-8 text-red-500" />
+            </div>
+            <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">
+              {error ? 'Unable to Load Booking' : 'Booking Not Found'}
+            </h2>
+            <p className="text-slate-500 dark:text-gray-400 text-sm mb-6">
+              {error || "This booking doesn't exist or you don't have permission to view it."}
+            </p>
+            <div className="flex gap-3 justify-center">
+              <Link href="/bookings"><Button variant="outline" className="dark:border-gray-600 dark:text-gray-300">My Bookings</Button></Link>
+              <Link href="/dashboard"><Button className="bg-blue-600 hover:bg-blue-700">Dashboard</Button></Link>
+            </div>
+          </div>
         </div>
       </div>
     );

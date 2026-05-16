@@ -22,8 +22,9 @@ export async function GET(
       return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
     }
 
-    // Verify ownership
-    if (booking.userId.toString() !== session.user?.id) {
+    // Verify ownership (admins can view any booking)
+    const isAdmin = (session.user as any)?.role === 'admin';
+    if (!isAdmin && booking.userId.toString() !== (session.user as any)?.id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
