@@ -21,7 +21,7 @@ export default function SeedDBPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.error || 'Failed to seed database');
+        setError((data.details || data.error) || 'Failed to seed database');
       } else {
         setResult(data);
       }
