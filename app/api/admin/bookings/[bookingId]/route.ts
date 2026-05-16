@@ -5,7 +5,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { bookingId: string } }
+  { params }: { params: Promise<{ bookingId: string }> }
 ) {
   try {
     const session = await auth();
@@ -13,11 +13,12 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const { bookingId } = await params;
     const { status } = await request.json();
     await connectDB();
 
     const booking = await Booking.findByIdAndUpdate(
-      params.bookingId,
+      bookingId,
       { status },
       { new: true }
     );

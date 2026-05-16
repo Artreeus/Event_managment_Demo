@@ -5,12 +5,15 @@ import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Loader, AlertCircle, Shield, Lock, CreditCard, ArrowLeft, Check } from 'lucide-react';
+import {
+  Loader, AlertCircle, Shield, Lock, CreditCard,
+  ArrowLeft, Check, Calendar, User,
+} from 'lucide-react';
 import Header from '@/components/Header';
 
 interface BookingDetails {
   _id: string;
-  packageId: { name: string; price: number };
+  packageId: { name: string; price: number; description?: string };
   customerName: string;
   customerEmail: string;
   bookingDate: string;
@@ -21,6 +24,14 @@ const paymentMethods = [
   { id: 'card', label: 'Credit / Debit Card', icon: '💳' },
   { id: 'paypal', label: 'PayPal', icon: '🅿️' },
 ];
+
+function formatCard(value: string) {
+  return value.replace(/\D/g, '').slice(0, 16).replace(/(.{4})/g, '$1 ').trim();
+}
+function formatExpiry(value: string) {
+  const digits = value.replace(/\D/g, '').slice(0, 4);
+  return digits.length > 2 ? `${digits.slice(0, 2)}/${digits.slice(2)}` : digits;
+}
 
 export default function CheckoutPage() {
   const params = useParams();
@@ -33,6 +44,9 @@ export default function CheckoutPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState('');
   const [selectedMethod, setSelectedMethod] = useState('card');
+  const [cardNumber, setCardNumber] = useState('');
+  const [expiry, setExpiry] = useState('');
+  const [cvc, setCvc] = useState('');
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -50,33 +64,24 @@ export default function CheckoutPage() {
 
   const handlePayment = async () => {
     if (!booking) return;
+    if (selectedMethod === 'card') {
+      const digits = cardNumber.replace(/\s/g, '');
+      if (digits.length < 16) { setError('Please enter a valid 16-digit card number.'); return; }
+      if (expiry.length < 5) { setError('Please enter a valid expiry date (MM/YY).'); return; }
+      if (cvc.length < 3) { setError('Please enter a valid CVC.'); return; }
+    }
     setError('');
     setIsProcessing(true);
     try {
-      const res = await fetch('/api/payments/create-intent', {
+      const res = await fetch('/api/payments/demo-confirm', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ bookingId }),
       });
-      if (!res.ok) throw new Error('Failed to create payment');
-      const { clientSecret } = await res.json();
-      setTimeout(async () => {
-        try {
-          const updateRes = await fetch('/api/payments/confirm', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ bookingId, clientSecret }),
-          });
-          if (updateRes.ok) {
-            router.push(`/booking-confirmation/${bookingId}`);
-          }
-        } catch {
-          setError('Payment processing failed');
-          setIsProcessing(false);
-        }
-      }, 1500);
+      if (!res.ok) throw new Error('Payment failed');
+      router.push(`/booking-confirmation/${bookingId}`);
     } catch (err: any) {
-      setError(err.message || 'Payment failed');
+      setError(err.message || 'Payment processing failed. Please try again.');
       setIsProcessing(false);
     }
   };
@@ -141,7 +146,8 @@ export default function CheckoutPage() {
 
             {/* Payment panel */}
             <div className="lg:col-span-2 space-y-5">
-              {/* Payment method */}
+
+              {/* Payment method tabs */}
               <div className="bg-white dark:bg-gray-800 rounded-2xl border border-slate-200 dark:border-gray-700 p-6">
                 <h2 className="font-bold text-slate-900 dark:text-white mb-5 flex items-center gap-2">
                   <CreditCard className="w-5 h-5 text-blue-500" />Payment Method
@@ -154,7 +160,7 @@ export default function CheckoutPage() {
                       className={`flex-1 flex items-center gap-2.5 px-4 py-3 rounded-xl border text-sm font-medium transition-all ${
                         selectedMethod === m.id
                           ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
-                          : 'border-slate-200 dark:border-gray-600 text-slate-600 dark:text-gray-300 hover:border-blue-300 dark:hover:border-blue-700'
+                          : 'border-slate-200 dark:border-gray-600 text-slate-600 dark:text-gray-300 hover:border-blue-300'
                       }`}
                     >
                       <span>{m.icon}</span>{m.label}
@@ -163,38 +169,95 @@ export default function CheckoutPage() {
                   ))}
                 </div>
 
-                {/* Demo card form */}
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-sm font-medium text-slate-700 dark:text-gray-300 mb-1.5 block">Cardholder Name</label>
-                    <input
-                      type="text"
-                      value={booking.customerName}
-                      readOnly
-                      className="w-full h-11 px-4 rounded-xl border border-slate-200 dark:border-gray-600 bg-slate-50 dark:bg-gray-700 text-slate-900 dark:text-white text-sm"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-slate-700 dark:text-gray-300 mb-1.5 block">Email Address</label>
-                    <input
-                      type="email"
-                      value={booking.customerEmail}
-                      readOnly
-                      className="w-full h-11 px-4 rounded-xl border border-slate-200 dark:border-gray-600 bg-slate-50 dark:bg-gray-700 text-slate-900 dark:text-white text-sm"
-                    />
-                  </div>
-
-                  {/* Stripe placeholder */}
-                  <div className="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-gray-700 dark:to-gray-750 border-2 border-dashed border-slate-300 dark:border-gray-600 rounded-xl p-6 text-center">
-                    <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center mx-auto mb-3">
-                      <CreditCard className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                {selectedMethod === 'card' ? (
+                  <div className="space-y-4">
+                    {/* Cardholder info (pre-filled, read-only) */}
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-sm font-medium text-slate-700 dark:text-gray-300 mb-1.5 flex items-center gap-1.5 block">
+                          <User className="w-3.5 h-3.5 text-slate-400" />Cardholder Name
+                        </label>
+                        <input
+                          type="text"
+                          value={booking.customerName}
+                          readOnly
+                          className="w-full h-11 px-4 rounded-xl border border-slate-200 dark:border-gray-600 bg-slate-50 dark:bg-gray-700/50 text-slate-700 dark:text-gray-300 text-sm cursor-not-allowed"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-slate-700 dark:text-gray-300 mb-1.5 flex items-center gap-1.5 block">
+                          <Calendar className="w-3.5 h-3.5 text-slate-400" />Event Date
+                        </label>
+                        <input
+                          type="text"
+                          value={new Date(booking.bookingDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                          readOnly
+                          className="w-full h-11 px-4 rounded-xl border border-slate-200 dark:border-gray-600 bg-slate-50 dark:bg-gray-700/50 text-slate-700 dark:text-gray-300 text-sm cursor-not-allowed"
+                        />
+                      </div>
                     </div>
-                    <p className="text-slate-600 dark:text-gray-300 text-sm font-medium mb-1">Demo Checkout</p>
-                    <p className="text-slate-400 dark:text-gray-500 text-xs">
-                      In production, Stripe Elements would appear here for secure card entry.
-                    </p>
+
+                    {/* Card number */}
+                    <div>
+                      <label className="text-sm font-medium text-slate-700 dark:text-gray-300 mb-1.5 block">Card Number</label>
+                      <div className="relative">
+                        <CreditCard className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          placeholder="1234 5678 9012 3456"
+                          value={cardNumber}
+                          onChange={(e) => setCardNumber(formatCard(e.target.value))}
+                          maxLength={19}
+                          className="w-full h-11 pl-10 pr-4 rounded-xl border border-slate-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 tracking-widest"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Expiry + CVC */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-sm font-medium text-slate-700 dark:text-gray-300 mb-1.5 block">Expiry Date</label>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          placeholder="MM/YY"
+                          value={expiry}
+                          onChange={(e) => setExpiry(formatExpiry(e.target.value))}
+                          maxLength={5}
+                          className="w-full h-11 px-4 rounded-xl border border-slate-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-slate-700 dark:text-gray-300 mb-1.5 block">CVC</label>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          placeholder="123"
+                          value={cvc}
+                          onChange={(e) => setCvc(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                          maxLength={4}
+                          className="w-full h-11 px-4 rounded-xl border border-slate-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Demo badge */}
+                    <div className="flex items-center gap-2.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-3.5">
+                      <Shield className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                      <p className="text-xs text-amber-700 dark:text-amber-400">
+                        <strong>Demo mode</strong> — Enter any card details to simulate payment. No real charges will be made.
+                      </p>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  /* PayPal placeholder */
+                  <div className="bg-slate-50 dark:bg-gray-700/50 border border-slate-200 dark:border-gray-600 rounded-xl p-8 text-center">
+                    <div className="text-4xl mb-3">🅿️</div>
+                    <p className="text-slate-600 dark:text-gray-300 font-medium text-sm mb-1">PayPal Demo</p>
+                    <p className="text-slate-400 dark:text-gray-500 text-xs">Click "Pay Now" below to simulate a PayPal payment.</p>
+                  </div>
+                )}
               </div>
 
               {error && (
@@ -212,7 +275,7 @@ export default function CheckoutPage() {
                 {isProcessing ? (
                   <><Loader className="w-5 h-5 mr-2 animate-spin" />Processing Payment...</>
                 ) : (
-                  <><Lock className="w-5 h-5 mr-2" />Pay ${booking.packageId.price} Securely</>
+                  <><Lock className="w-5 h-5 mr-2" />Pay ${booking.packageId.price} Now</>
                 )}
               </Button>
 
@@ -231,15 +294,21 @@ export default function CheckoutPage() {
                   <div>
                     <p className="text-xs text-slate-500 dark:text-gray-400 uppercase tracking-wider mb-1">Service</p>
                     <p className="font-semibold text-slate-900 dark:text-white">{booking.packageId.name}</p>
+                    {booking.packageId.description && (
+                      <p className="text-xs text-slate-500 dark:text-gray-400 mt-0.5">{booking.packageId.description}</p>
+                    )}
                   </div>
                   <div>
                     <p className="text-xs text-slate-500 dark:text-gray-400 uppercase tracking-wider mb-1">Customer</p>
                     <p className="text-slate-700 dark:text-gray-300 text-sm">{booking.customerName}</p>
+                    <p className="text-slate-500 dark:text-gray-400 text-xs">{booking.customerEmail}</p>
                   </div>
                   <div>
                     <p className="text-xs text-slate-500 dark:text-gray-400 uppercase tracking-wider mb-1">Event Date</p>
                     <p className="text-slate-700 dark:text-gray-300 text-sm">
-                      {new Date(booking.bookingDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
+                      {new Date(booking.bookingDate).toLocaleDateString('en-US', {
+                        weekday: 'short', month: 'short', day: 'numeric', year: 'numeric',
+                      })}
                     </p>
                   </div>
 
@@ -248,7 +317,8 @@ export default function CheckoutPage() {
                       <span>Subtotal</span><span>${booking.packageId.price}</span>
                     </div>
                     <div className="flex justify-between text-sm text-slate-600 dark:text-gray-400">
-                      <span>Platform fee</span><span className="text-green-600 dark:text-green-400">Free</span>
+                      <span>Platform fee</span>
+                      <span className="text-green-600 dark:text-green-400">Free</span>
                     </div>
                   </div>
 
@@ -265,6 +335,7 @@ export default function CheckoutPage() {
                 </div>
               </div>
             </div>
+
           </div>
         </div>
       </div>
