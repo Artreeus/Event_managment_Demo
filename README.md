@@ -1,4 +1,4 @@
-21# EventBook - Professional Event Booking Platform
+321# EventBook - Professional Event Booking Platform
 
 A modern, full-stack event booking platform built with Next.js, MongoDB, Stripe, and Auth.js.
 
